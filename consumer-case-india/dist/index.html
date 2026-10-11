@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ConsumerCase India — prepare, understand and manage your consumer case with human-guided filing support." />
+  <title>ConsumerCase India · Filing workspace</title>
+  <style>
+    :root { --ink:#182126; --muted:#6f7b7b; --line:#e3e7e3; --canvas:#f4f6f2; --paper:#fff; --green:#18715e; --green-dark:#0f5949; --mint:#dff3e9; --mint-2:#edf8f2; --peach:#fff0e5; --gold:#b06a12; --navy:#23343d; --shadow:0 18px 44px rgba(21,43,38,.08); }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--canvas); font:14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    button, input { font:inherit; }
+    button { cursor:pointer; }
+    a { color:inherit; }
+    .app { display:flex; min-height:100vh; }
+    .sidebar { width:252px; background:#183b35; color:#d9e9e3; display:flex; flex-direction:column; padding:26px 18px 20px; }
+    .brand { display:flex; align-items:center; gap:10px; padding:0 12px 28px; color:#fff; font-weight:730; letter-spacing:-.02em; font-size:18px; }
+    .brand-mark { width:30px; height:30px; border-radius:10px 10px 10px 4px; background:#d5f0df; display:grid; place-items:center; color:#17604f; font-weight:900; font-size:15px; }
+    .eyebrow { text-transform:uppercase; letter-spacing:.12em; font-size:10px; font-weight:800; opacity:.64; }
+    .nav { display:grid; gap:4px; }
+    .nav button { border:0; background:transparent; color:#bdd3cc; text-align:left; border-radius:10px; padding:11px 12px; display:flex; gap:11px; align-items:center; transition:.2s; }
+    .nav button:hover, .nav button.active { background:#2a564e; color:#fff; }
+    .nav svg { width:17px; height:17px; opacity:.88; }
+    .side-foot { margin-top:auto; border-top:1px solid rgba(255,255,255,.13); padding:17px 12px 0; }
+    .profile { display:flex; align-items:center; gap:10px; color:#fff; margin-top:13px; }
+    .avatar { width:31px; height:31px; border-radius:50%; display:grid; place-items:center; background:#e9b67e; color:#5b371c; font-weight:800; font-size:11px; }
+    .profile small { display:block; color:#a9c3bb; font-size:11px; margin-top:1px; }
+    .main { width:calc(100% - 252px); min-width:0; }
+    .topbar { height:76px; background:rgba(255,255,255,.78); border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 42px; backdrop-filter:blur(10px); }
+    .crumb { display:flex; gap:10px; align-items:center; color:var(--muted); font-size:13px; }
+    .crumb strong { color:var(--ink); font-weight:650; }
+    .top-actions { display:flex; align-items:center; gap:16px; }
+    .secure { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--green); font-weight:650; }
+    .help { border:1px solid var(--line); background:white; border-radius:50px; padding:8px 13px; color:var(--navy); font-size:12px; font-weight:700; }
+    .content { max-width:1320px; padding:36px 42px 56px; margin:auto; }
+    .view { display:none; animation:rise .24s ease both; }
+    .view.active { display:block; }
+    @keyframes rise { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+    .page-head { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:28px; gap:20px; }
+    h1,h2,h3,p { margin:0; }
+    h1 { font-size:30px; letter-spacing:-.045em; line-height:1.1; }
+    h2 { font-size:18px; letter-spacing:-.02em; }
+    h3 { font-size:14px; letter-spacing:-.01em; }
+    .lede { color:var(--muted); margin-top:7px; max-width:650px; }
+    .btn { border:0; border-radius:9px; padding:11px 15px; font-weight:750; font-size:13px; display:inline-flex; align-items:center; gap:8px; }
+    .btn.primary { background:var(--green); color:white; box-shadow:0 5px 12px rgba(24,113,94,.16); }
+    .btn.primary:hover { background:var(--green-dark); }
+    .btn.ghost { background:#fff; border:1px solid var(--line); color:var(--navy); }
+    .btn.soft { background:var(--mint); color:var(--green-dark); }
+    .grid { display:grid; gap:16px; }
+    .stats { grid-template-columns:repeat(4, minmax(0,1fr)); margin-bottom:18px; }
+    .card { background:var(--paper); border:1px solid var(--line); border-radius:14px; box-shadow:0 4px 18px rgba(21,43,38,.025); }
+    .stat { padding:18px 19px; min-height:112px; position:relative; overflow:hidden; }
+    .stat:after { content:""; position:absolute; width:66px; height:66px; right:-20px; bottom:-24px; background:var(--mint-2); border-radius:50%; }
+    .stat-label { color:var(--muted); font-size:12px; font-weight:650; }
+    .stat-number { font-size:28px; font-weight:760; letter-spacing:-.045em; margin-top:11px; position:relative; z-index:1; }
+    .stat-note { color:var(--green); font-size:11px; margin-top:1px; position:relative; z-index:1; }
+    .dashboard-grid { grid-template-columns:minmax(0, 1.55fr) minmax(300px, .85fr); align-items:start; }
+    .case-card { padding:22px; }
+    .card-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+    .case-title { display:flex; gap:12px; align-items:flex-start; }
+    .case-icon { width:39px; height:39px; border-radius:11px; background:var(--mint); color:var(--green-dark); display:grid; place-items:center; font-weight:900; }
+    .muted { color:var(--muted); }
+    .tiny { font-size:11px; }
+    .tag { padding:5px 9px; border-radius:30px; font-size:11px; font-weight:800; white-space:nowrap; }
+    .tag.amber { color:#935d14; background:#fff4d9; }
+    .tag.green { color:#11624d; background:var(--mint); }
+    .tag.blue { color:#33617b; background:#e8f2f8; }
+    .progress-wrap { margin:26px 0 20px; }
+    .progress-label { display:flex; justify-content:space-between; color:var(--muted); font-size:11px; font-weight:700; margin-bottom:8px; }
+    .progress { height:7px; background:#edf0ec; border-radius:10px; overflow:hidden; }
+    .progress > span { display:block; width:58%; height:100%; background:var(--green); border-radius:inherit; }
+    .mini-grid { display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid var(--line); padding-top:18px; gap:12px; }
+    .mini-grid label { display:block; color:var(--muted); font-size:11px; margin-bottom:5px; }
+    .mini-grid strong { font-size:13px; }
+    .side-stack { display:grid; gap:16px; }
+    .next-card { padding:20px; background:var(--navy); color:white; border-color:var(--navy); }
+    .next-card .muted { color:#b8c9ca; }
+    .next-card h2 { margin-top:9px; }
+    .next-card .btn { margin-top:20px; background:#d7efe1; color:#174f42; }
+    .notice { padding:17px 18px; background:var(--peach); border:1px solid #f4d7bd; border-radius:13px; display:flex; gap:12px; }
+    .notice .icon { color:#a96013; font-weight:900; }
+    .notice strong { display:block; font-size:12px; margin-bottom:3px; }
+    .notice p { font-size:12px; color:#815a37; }
+    .activity { padding:21px; }
+    .activity-row { display:flex; gap:13px; padding:16px 0; border-bottom:1px solid var(--line); }
+    .activity-row:last-child { border-bottom:0; padding-bottom:0; }
+    .dot { width:9px; height:9px; background:var(--green); border:3px solid #cfeade; border-radius:50%; margin-top:6px; flex:0 0 auto; }
+    .activity-row p { font-size:12px; }
+    .activity-row time { display:block; margin-top:4px; color:var(--muted); font-size:11px; }
+    .filing-head { background:#e3f3e9; border:1px solid #c8e7d5; border-radius:16px; padding:24px 26px; display:flex; justify-content:space-between; gap:24px; align-items:center; margin-bottom:18px; }
+    .filing-head h1 { color:#174f42; }
+    .filing-head p { color:#47766a; max-width:660px; margin-top:7px; }
+    .portal-link { color:#17604f; font-size:12px; font-weight:800; text-decoration:none; white-space:nowrap; }
+    .filing-grid { grid-template-columns:minmax(0, 1fr) minmax(330px, .8fr); align-items:start; }
+    .readiness { padding:21px; }
+    .readiness-score { display:flex; align-items:center; gap:15px; margin:20px 0 20px; }
+    .ring { width:69px; height:69px; border-radius:50%; display:grid; place-items:center; background:conic-gradient(var(--green) 0 270deg,#e9eeea 270deg); position:relative; }
+    .ring:after { content:""; position:absolute; inset:7px; border-radius:50%; background:white; }
+    .ring strong { position:relative; z-index:1; font-size:17px; }
+    .readiness-score strong { font-size:14px; }
+    .checklist { display:grid; gap:0; border-top:1px solid var(--line); }
+    .check { display:flex; gap:11px; align-items:flex-start; padding:13px 0; border-bottom:1px solid var(--line); }
+    .check-bullet { width:18px; height:18px; border-radius:50%; border:1px solid #c5cfca; display:grid; place-items:center; flex:0 0 auto; color:white; font-size:11px; margin-top:1px; }
+    .check.done .check-bullet { background:var(--green); border-color:var(--green); }
+    .check.pending .check-bullet { border-color:#dfa65f; color:#bd771a; }
+    .check label { font-size:12px; font-weight:700; }
+    .check small { display:block; font-size:11px; color:var(--muted); margin-top:2px; }
+    .guide { padding:21px; }
+    .stepper { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; margin:20px 0 23px; }
+    .step { text-align:center; color:var(--muted); font-size:10px; font-weight:750; position:relative; }
+    .step:before { content:""; height:3px; background:#e8eeea; position:absolute; top:9px; left:-50%; right:50%; z-index:0; }
+    .step:first-child:before { display:none; }
+    .step span { position:relative; z-index:1; display:grid; place-items:center; width:20px; height:20px; margin:0 auto 7px; border-radius:50%; background:#e8eeea; color:#758381; font-size:10px; }
+    .step.done, .step.current { color:var(--green); }
+    .step.done span, .step.current span { background:var(--green); color:white; }
+    .step.done:before, .step.current:before { background:var(--green); }
+    .field-row { display:grid; grid-template-columns:90px 1fr; gap:14px; padding:13px 0; border-top:1px solid var(--line); }
+    .field-row label { color:var(--muted); font-size:11px; font-weight:700; }
+    .field-row strong { font-size:12px; }
+    .guide-actions { display:flex; gap:9px; margin-top:20px; }
+    .guide-note { margin-top:19px; padding:12px; background:#f8faf7; border:1px solid var(--line); border-radius:10px; color:var(--muted); font-size:11px; }
+    .section-card { padding:21px; margin-top:17px; }
+    .table { width:100%; border-collapse:collapse; margin-top:15px; }
+    .table th { text-align:left; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; font-size:10px; padding:10px 8px; border-bottom:1px solid var(--line); }
+    .table td { padding:13px 8px; border-bottom:1px solid var(--line); font-size:12px; vertical-align:top; }
+    .table tr:last-child td { border-bottom:0; }
+    .file { display:flex; gap:9px; align-items:center; }
+    .file-icon { width:27px; height:31px; border:1px solid #c9d3cd; border-radius:5px; display:grid; place-items:center; color:var(--green); font-size:10px; font-weight:800; background:#fafcf9; }
+    .timeline { padding:21px; }
+    .timeline-item { display:grid; grid-template-columns:105px 18px 1fr; gap:12px; padding:16px 0; border-bottom:1px solid var(--line); }
+    .timeline-item:last-child { border-bottom:0; }
+    .timeline-date { color:var(--muted); font-size:11px; font-weight:700; }
+    .timeline-line { position:relative; }
+    .timeline-line:after { content:""; width:1px; background:#d5e3dc; position:absolute; top:13px; bottom:-31px; left:8px; }
+    .timeline-item:last-child .timeline-line:after { display:none; }
+    .timeline-dot { width:17px; height:17px; border-radius:50%; background:var(--mint); border:4px solid white; box-shadow:0 0 0 1px #b9d8ca; position:relative; z-index:1; }
+    .timeline-item h3 { margin-bottom:3px; }
+    .timeline-item p { color:var(--muted); font-size:12px; }
+    .empty { padding:34px; text-align:center; color:var(--muted); }
+    .modal { display:none; position:fixed; inset:0; background:rgba(20,36,33,.44); z-index:10; align-items:center; justify-content:center; padding:20px; }
+    .modal.open { display:flex; }
+    .modal-card { width:min(520px,100%); background:white; border-radius:16px; padding:25px; box-shadow:0 20px 70px rgba(0,0,0,.2); }
+    .modal-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:18px; }
+    .close { border:0; background:transparent; font-size:21px; color:var(--muted); }
+    .form-grid { display:grid; gap:14px; }
+    .form-grid label { font-size:11px; color:var(--muted); font-weight:750; display:grid; gap:6px; }
+    .form-grid input { width:100%; border:1px solid #ced8d3; border-radius:8px; padding:10px 11px; color:var(--ink); outline:none; }
+    .form-grid input:focus { border-color:var(--green); box-shadow:0 0 0 3px #e1f3ea; }
+    .modal-foot { display:flex; justify-content:flex-end; gap:9px; margin-top:20px; }
+    .toast { position:fixed; bottom:22px; right:22px; padding:12px 16px; color:white; background:#183b35; border-radius:9px; box-shadow:var(--shadow); transform:translateY(90px); opacity:0; transition:.25s; z-index:12; font-size:12px; }
+    .toast.show { transform:none; opacity:1; }
+    .intake-shell { display:grid; grid-template-columns:minmax(0,1.18fr) minmax(300px,.82fr); gap:17px; align-items:start; }
+    .intake-card { padding:22px; }
+    .form-section { border-top:1px solid var(--line); padding-top:18px; margin-top:18px; }
+    .form-section:first-of-type { border-top:0; padding-top:0; margin-top:0; }
+    .form-section h3 { margin-bottom:12px; }
+    .form-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .form-field { display:grid; gap:6px; }
+    .form-field.full { grid-column:1/-1; }
+    .form-field label { color:var(--muted); font-size:11px; font-weight:750; }
+    .form-field input,.form-field textarea,.form-field select { border:1px solid #ced8d3; border-radius:8px; padding:10px 11px; color:var(--ink); outline:none; background:white; width:100%; }
+    .form-field textarea { min-height:94px; resize:vertical; }
+    .form-field input:focus,.form-field textarea:focus,.form-field select:focus { border-color:var(--green); box-shadow:0 0 0 3px #e1f3ea; }
+    .upload-box { border:1.5px dashed #b7cfc3; background:#f7fbf8; border-radius:12px; padding:20px; text-align:center; margin-top:12px; }
+    .upload-box input { display:none; }
+    .upload-box.drag { background:#e5f5eb; border-color:var(--green); }
+    .upload-label { display:inline-flex; align-items:center; gap:7px; background:var(--mint); color:var(--green-dark); border-radius:8px; padding:10px 13px; font-size:12px; font-weight:800; cursor:pointer; }
+    .upload-list { display:grid; gap:8px; margin-top:13px; }
+    .upload-item { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px; border:1px solid var(--line); background:white; border-radius:9px; text-align:left; }
+    .upload-item .file-meta { min-width:0; }
+    .upload-item strong { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:12px; }
+    .upload-item small { display:block; color:var(--muted); font-size:10px; margin-top:2px; }
+    .extract-badge { font-size:10px; color:var(--green); background:var(--mint); border-radius:20px; padding:5px 8px; white-space:nowrap; font-weight:800; }
+    .facts-preview { display:grid; gap:8px; margin-top:14px; }
+    .fact-row { display:grid; grid-template-columns:125px 1fr; gap:9px; padding:10px; border:1px solid var(--line); border-radius:8px; background:#fbfcfa; }
+    .fact-row label { color:var(--muted); font-size:11px; font-weight:700; }
+    .fact-row div { font-size:12px; }
+    .source-chip { display:inline-block; margin-left:5px; padding:2px 5px; border-radius:4px; background:#eef2ee; color:var(--muted); font-size:9px; }
+    .risk-card { padding:21px; }
+    .risk-card .risk { display:flex; gap:10px; padding:12px 0; border-bottom:1px solid var(--line); }
+    .risk-card .risk:last-child { border-bottom:0; }
+    .risk-icon { width:20px; height:20px; border-radius:50%; background:#fff0d5; color:#a26816; display:grid; place-items:center; font-size:11px; font-weight:900; flex:0 0 auto; }
+    .risk.ok .risk-icon { background:var(--mint); color:var(--green); }
+    .risk strong { display:block; font-size:12px; }
+    .risk p { color:var(--muted); font-size:11px; margin-top:2px; }
+    .reference-card { padding:21px; margin-top:17px; background:#fbfaf5; border-color:#e9e4d2; }
+    .reference-item { padding:12px 0; border-top:1px solid #eee9d8; }
+    .reference-item:first-of-type { border-top:0; }
+    .reference-item strong { font-size:12px; }
+    .reference-item p { color:var(--muted); font-size:11px; margin-top:3px; }
+    .doc-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:18px; }
+    .rule-pill { display:inline-flex; align-items:center; gap:4px; border:1px solid #d8e2dc; background:#f9fcfa; padding:5px 8px; border-radius:20px; color:var(--green-dark); font-size:10px; font-weight:750; }
+    @media(max-width:1050px) { .sidebar { width:216px; } .main { width:calc(100% - 216px); } .content,.topbar { padding-left:26px; padding-right:26px; } .stats { grid-template-columns:repeat(2,1fr); } .dashboard-grid,.filing-grid { grid-template-columns:1fr; } }
+    @media(max-width:900px) { .intake-shell { grid-template-columns:1fr; } }
+    @media(max-width:720px) { .app { display:block; } .sidebar { width:100%; min-height:auto; padding:15px; } .brand { padding:0 7px 15px; } .nav { grid-template-columns:repeat(5,1fr); } .nav button { justify-content:center; padding:9px 5px; font-size:0; } .nav svg { width:19px; height:19px; } .side-foot { display:none; } .main { width:100%; } .topbar { height:60px; padding:0 17px; } .top-actions .secure { display:none; } .content { padding:24px 17px 40px; } .page-head { align-items:flex-start; flex-direction:column; margin-bottom:22px; } h1 { font-size:26px; } .stats { grid-template-columns:1fr 1fr; gap:10px; } .stat { padding:14px; min-height:98px; } .stat-number { font-size:23px; } .filing-head { padding:19px; align-items:flex-start; flex-direction:column; } .mini-grid { grid-template-columns:1fr; } .timeline-item { grid-template-columns:74px 18px 1fr; } .table { min-width:650px; } .section-card { overflow:auto; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark">C</div><span>ConsumerCase <span style="color:#bfe2d1">India</span></span></div>
+      <div class="eyebrow" style="padding:0 12px 9px">Workspace</div>
+      <nav class="nav" aria-label="Primary navigation">
+        <button class="active" data-view="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z"/></svg>Overview</button>
+        <button data-view="intake"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v16M4 12h16"/></svg>Case intake</button>
+        <button data-view="filing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l4 4v14H6V3Z"/><path d="M14 3v5h5M9 12h6M9 16h6"/></svg>e-Jagriti filing</button>
+        <button data-view="documents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h8l4 4v14H7V3Z"/><path d="M15 3v5h4M10 12h6M10 16h4"/></svg>Documents</button>
+        <button data-view="activity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16M4 12h16M4 19h16"/></svg>Activity</button>
+      </nav>
+      <div class="side-foot"><div class="eyebrow">Your case</div><div class="profile"><div class="avatar">AK</div><div><strong style="font-size:12px">Arjun Kumar</strong><small>Consumer account</small></div></div></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><div class="crumb"><span>My workspace</span><span>·</span><strong id="crumb-title">Overview</strong></div><div class="top-actions"><div class="secure">✦ Private & encrypted</div><button class="help">Need help?</button></div></header>
+      <div class="content">
+        <section class="view active" id="view-overview">
+          <div class="page-head"><div><div class="eyebrow" style="color:var(--green)">Good morning, Arjun</div><h1>Your case, in one place.</h1><p class="lede">Prepare your complaint, follow the official e-Jagriti steps, and keep every next action visible.</p></div><button class="btn primary" data-open-modal>＋ Add a case</button></div>
+          <div class="grid stats"><div class="card stat"><div class="stat-label">Active cases</div><div class="stat-number">01</div><div class="stat-note">On track</div></div><div class="card stat"><div class="stat-label">Filing readiness</div><div class="stat-number">75%</div><div class="stat-note">3 items to go</div></div><div class="card stat"><div class="stat-label">Documents</div><div class="stat-number">08</div><div class="stat-note">All originals preserved</div></div><div class="card stat"><div class="stat-label">Next action</div><div class="stat-number" style="font-size:20px;margin-top:15px">Review packet</div><div class="stat-note">Due today</div></div></div>
+          <div class="grid dashboard-grid"><div class="grid" style="gap:16px"><div class="card case-card"><div class="card-head"><div class="case-title"><div class="case-icon">CC</div><div><div class="eyebrow" style="color:var(--green)">Consumer complaint · CC-1048</div><h2 style="margin-top:4px">Refund for undelivered laptop</h2><p class="muted tiny" style="margin-top:3px">Opposite party: NovaCart Online Services Pvt. Ltd.</p></div></div><span class="tag amber">Needs your review</span></div><div class="progress-wrap"><div class="progress-label"><span>Case preparation</span><strong style="color:var(--ink)">4 of 7 steps</strong></div><div class="progress"><span></span></div></div><div class="mini-grid"><div><label>Commission</label><strong>District · Delhi</strong></div><div><label>Consideration</label><strong>₹42,990</strong></div><div><label>Last saved</label><strong>Just now</strong></div></div><div style="display:flex;gap:9px;margin-top:20px"><button class="btn primary" data-view-link="filing">Continue case →</button><button class="btn ghost" data-view-link="documents">View documents</button></div></div><div class="card activity"><div class="card-head"><div><div class="eyebrow" style="color:var(--green)">Recent activity</div><h2 style="margin-top:4px">A clear record of what changed</h2></div><button class="btn ghost" style="padding:8px 11px" data-view-link="activity">View all</button></div><div class="activity-row"><div class="dot"></div><div><p><strong>Evidence bundle updated</strong> · 2 files added by you.</p><time>Today, 10:42 AM</time></div></div><div class="activity-row"><div class="dot"></div><div><p><strong>Filing packet prepared</strong> · Ready for your review.</p><time>Yesterday, 4:18 PM</time></div></div><div class="activity-row"><div class="dot"></div><div><p><strong>Jurisdiction check flagged</strong> · Confirm address for territorial jurisdiction.</p><time>12 Aug 2026, 11:05 AM</time></div></div></div></div><div class="side-stack"><div class="card next-card"><div class="eyebrow">Recommended next step</div><h2>Review your e-Jagriti packet</h2><p class="muted" style="font-size:12px;margin-top:8px">We’ve organised the complaint, annexures and filing checklist. You stay in control of the final facts.</p><button class="btn" data-view-link="filing">Open filing workspace →</button></div><div class="notice"><div class="icon">!</div><div><strong>Filing support, not filing confirmation</strong><p>We can guide and prepare. You complete login, CAPTCHA, payment and final submission on the official portal.</p></div></div></div></div>
+        </section>
+
+        <section class="view" id="view-intake">
+          <div class="page-head"><div><div class="eyebrow" style="color:var(--green)">Case intake · CC-1048</div><h1>Turn your evidence into a reviewable case file.</h1><p class="lede">Enter what you know, attach the originals, and confirm every extracted value before it appears in a generated document.</p></div><span class="tag amber">Local demo · no server encryption</span></div>
+          <div class="intake-shell"><div class="card intake-card"><div class="form-section"><h3>1. Consumer details</h3><div class="form-fields"><div class="form-field"><label for="consumer-name">Full legal name</label><input id="consumer-name" data-case-field="consumerName" placeholder="As it should appear on the complaint" /></div><div class="form-field"><label for="consumer-email">Email</label><input id="consumer-email" data-case-field="consumerEmail" type="email" placeholder="you@example.com" /></div><div class="form-field"><label for="consumer-mobile">Mobile number</label><input id="consumer-mobile" data-case-field="consumerMobile" placeholder="10-digit number" /></div><div class="form-field"><label for="consumer-state">State</label><input id="consumer-state" data-case-field="consumerState" placeholder="e.g. Delhi" /></div><div class="form-field full"><label for="consumer-address">Complete address and PIN</label><textarea id="consumer-address" data-case-field="consumerAddress" placeholder="Use the address relevant to territorial jurisdiction"></textarea></div></div></div>
+          <div class="form-section"><h3>2. Opposite party and transaction</h3><div class="form-fields"><div class="form-field"><label for="opposite-name">Seller / service provider</label><input id="opposite-name" data-case-field="oppositeName" placeholder="Legal or business name" /></div><div class="form-field"><label for="opposite-address">Opposite-party address</label><input id="opposite-address" data-case-field="oppositeAddress" placeholder="Registered / known address" /></div><div class="form-field"><label for="product">Product or service</label><input id="product" data-case-field="product" placeholder="What was purchased?" /></div><div class="form-field"><label for="purchase-date">Purchase / agreement date</label><input id="purchase-date" data-case-field="purchaseDate" type="date" /></div><div class="form-field"><label for="amount">Consideration paid (₹)</label><input id="amount" data-case-field="amount" inputmode="decimal" placeholder="Do not use compensation amount here" /></div><div class="form-field"><label for="order-ref">Invoice / order reference</label><input id="order-ref" data-case-field="orderRef" placeholder="Order or invoice number" /></div></div></div>
+          <div class="form-section"><h3>3. What happened?</h3><div class="form-fields"><div class="form-field full"><label for="facts">Describe the events in your own words</label><textarea id="facts" data-case-field="facts" style="min-height:150px" placeholder="What was promised, what went wrong, when you found out, and what you asked the company to do."></textarea></div><div class="form-field full"><label for="relief">Relief requested — review before generation</label><textarea id="relief" data-case-field="relief" placeholder="For example: refund of ₹…, reimbursement of documented expenses, and reasonable litigation costs."></textarea></div></div></div>
+          <div class="form-section"><h3>4. Upload evidence</h3><p class="muted tiny">Supported here: PDF, DOCX, JPG/JPEG, PNG, TXT and CSV. Files stay in this browser in the local version. Originals are not modified.</p><div class="upload-box" id="drop-zone"><label class="upload-label" for="evidence-input">＋ Choose files</label><input id="evidence-input" type="file" multiple accept=".pdf,.docx,.jpg,.jpeg,.png,.txt,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*,text/plain,text/csv" /><div class="muted tiny" style="margin-top:8px">or drag and drop receipts, screenshots, emails and bills here</div></div><div class="upload-list" id="upload-list"></div><div class="facts-preview" id="facts-preview"></div></div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:20px"><button class="btn primary" id="save-intake">Save confirmed intake</button><button class="btn soft" id="generate-docs">Generate document drafts →</button></div></div>
+          <div class="grid" style="gap:17px"><div class="card risk-card"><div class="eyebrow" style="color:var(--green)">Pre-generation checks</div><h2 style="margin-top:4px">What could cause scrutiny questions?</h2><div id="risk-list"><div class="risk"><div class="risk-icon">!</div><div><strong>Incomplete parties</strong><p>Add the consumer and opposite-party addresses before generating.</p></div></div><div class="risk"><div class="risk-icon">!</div><div><strong>Unsupported facts</strong><p>Facts extracted from documents will remain unconfirmed until you approve them.</p></div></div><div class="risk ok"><div class="risk-icon">✓</div><div><strong>Portal safeguards</strong><p>No password, OTP, CAPTCHA or automatic submission is collected here.</p></div></div></div></div><div class="card reference-card"><div class="eyebrow" style="color:#8e7b43">Reference patterns</div><h2 style="margin-top:4px">Scrutiny-oriented structure</h2><div class="reference-item"><strong>Memo of parties</strong><p>Complete addresses, mobile numbers and email IDs are kept together.</p></div><div class="reference-item"><strong>Running index and pagination</strong><p>Generated documents use a detailed index and numbered annexures.</p></div><div class="reference-item"><strong>Facts before conclusions</strong><p>Drafts separate confirmed facts, document extracts and issues for review.</p></div><div style="margin-top:14px"><a class="portal-link" href="https://ncdrc.nic.in/misc-filing" target="_blank" rel="noreferrer">View official NCDRC filing patterns ↗</a></div></div></div></div>
+        </section>
+
+        <section class="view" id="view-filing">
+          <div class="filing-head"><div><div class="eyebrow" style="color:var(--green-dark)">e-Jagriti · Consumer Complaint (CC)</div><h1>File with confidence, one step at a time.</h1><p>We’ve done the organising. You complete the official portal actions and stay in control of authentication and submission.</p></div><a class="portal-link" href="https://e-jagriti.gov.in/" target="_blank" rel="noreferrer">Open official portal ↗</a></div>
+          <div class="grid filing-grid"><div class="card readiness"><div class="card-head"><div><div class="eyebrow" style="color:var(--green)">Before you open the portal</div><h2 style="margin-top:4px">Filing readiness</h2></div><span class="tag green">Packet v1.3</span></div><div class="readiness-score"><div class="ring"><strong>75%</strong></div><div><strong>Almost ready</strong><p class="muted tiny" style="margin-top:3px">Complete the 3 open items below.</p></div></div><div class="checklist"><div class="check done"><div class="check-bullet">✓</div><div><label>Consumer and opposite-party details</label><small>Names, address and contact details captured.</small></div></div><div class="check done"><div class="check-bullet">✓</div><div><label>Complaint draft and relief requested</label><small>Draft ready for your final factual review.</small></div></div><div class="check done"><div class="check-bullet">✓</div><div><label>Evidence and annexures</label><small>8 files indexed; originals remain unchanged.</small></div></div><div class="check pending"><div class="check-bullet">!</div><div><label>Confirm territorial jurisdiction</label><small>Review the suggested Delhi Commission before filing.</small></div></div><div class="check pending"><div class="check-bullet">!</div><div><label>Approval and verification page</label><small>Download, sign where required, then re-upload.</small></div></div><div class="check pending"><div class="check-bullet">!</div><div><label>Fee verification</label><small>Confirm the current amount on the official portal.</small></div></div></div><div style="display:flex;gap:9px;margin-top:20px"><button class="btn soft" id="mark-ready">Mark review complete</button><button class="btn ghost" data-view-link="documents">View packet</button></div></div><div class="card guide"><div class="eyebrow" style="color:var(--green)">Guided portal checklist</div><h2 style="margin-top:4px">Your side-by-side guide</h2><div class="stepper"><div class="step done"><span>✓</span>Prepare</div><div class="step current"><span>2</span>Open portal</div><div class="step"><span>3</span>Enter</div><div class="step"><span>4</span>Pay & submit</div><div class="step"><span>5</span>Record</div></div><div class="notice" style="margin-bottom:12px;background:#f8faf7;border-color:var(--line);"><div class="icon" style="color:var(--green)">i</div><div><strong style="color:var(--ink)">You will complete this action on e-Jagriti</strong><p>Never share your password or OTP here. CAPTCHA and portal safeguards must be completed by you on the official site.</p></div></div><div class="field-row"><label>Portal action</label><strong>Sign in and choose “File New Case” → “Consumer Complaint”</strong></div><div class="field-row"><label>Your value</label><strong>Case CC-1048 · District Commission · Delhi</strong></div><div class="field-row"><label>Upload</label><strong>Complaint.pdf, Index.pdf and Annexures.zip</strong></div><div class="field-row"><label>Common check</label><strong>Use the same complainant name and mobile number throughout.</strong></div><div class="guide-actions"><a class="btn primary" href="https://e-jagriti.gov.in/" target="_blank" rel="noreferrer">Open e-Jagriti ↗</a><button class="btn ghost" id="next-step">Mark step complete</button></div><div class="guide-note">Source: <a href="https://e-jagriti.gov.in/help-docs" target="_blank" rel="noreferrer">official e-Jagriti Help Documents</a> · Consumer Complaint filing guide and Payment Flow. Last checked 11 Oct 2026.</div></div></div>
+          <div class="card section-card"><div class="card-head"><div><div class="eyebrow" style="color:var(--green)">After you submit</div><h2 style="margin-top:4px">Record the portal outcome</h2><p class="muted tiny" style="margin-top:4px">User-reported details stay clearly labelled until a supporting acknowledgement is reviewed.</p></div><button class="btn primary" data-open-modal>＋ Add submission record</button></div><table class="table"><thead><tr><th>Status</th><th>What we know</th><th>Evidence</th><th>Label</th></tr></thead><tbody id="submission-row"><tr><td><span class="tag blue">Not recorded</span></td><td>No portal submission has been recorded yet.</td><td>—</td><td><span class="muted">Awaiting your update</span></td></tr></tbody></table></div>
+        </section>
+
+        <section class="view" id="view-documents"><div class="page-head"><div><div class="eyebrow" style="color:var(--green)">Case CC-1048</div><h1>Documents that stay traceable.</h1><p class="lede">Every extracted value remains a suggestion until you confirm it. Originals are never silently changed.</p></div><button class="btn primary">＋ Upload evidence</button></div><div class="card section-card" style="margin-top:0"><div class="card-head"><div><h2>Filing packet · v1.3</h2><p class="muted tiny" style="margin-top:4px">Generated 11 Oct 2026 · 8 files · 12.4 MB</p></div><div style="display:flex;gap:8px"><button class="btn ghost">Preview</button><button class="btn soft">Download packet ↓</button></div></div><table class="table"><thead><tr><th>Document</th><th>Category</th><th>Source</th><th>Review state</th><th></th></tr></thead><tbody><tr><td><div class="file"><div class="file-icon">PDF</div><div><strong>Consumer complaint</strong><div class="muted tiny">Complaint_CC-1048_v1.3.pdf</div></div></div></td><td>Draft pleading</td><td>User + assisted draft</td><td><span class="tag amber">Needs approval</span></td><td>•••</td></tr><tr><td><div class="file"><div class="file-icon">PDF</div><div><strong>List of documents</strong><div class="muted tiny">Index_CC-1048_v1.0.pdf</div></div></div></td><td>Index</td><td>Generated</td><td><span class="tag green">Ready</span></td><td>•••</td></tr><tr><td><div class="file"><div class="file-icon">JPG</div><div><strong>Order confirmation</strong><div class="muted tiny">nova-order-8814.jpg</div></div></div></td><td>Invoice / order</td><td>Uploaded by you</td><td><span class="tag green">Confirmed</span></td><td>•••</td></tr><tr><td><div class="file"><div class="file-icon">PDF</div><div><strong>Support correspondence</strong><div class="muted tiny">support-thread.pdf</div></div></div></td><td>Communication</td><td>Extracted text</td><td><span class="tag amber">Confirm 2 fields</span></td><td>•••</td></tr></tbody></table></div><div class="grid" style="grid-template-columns:1fr 1fr;margin-top:17px"><div class="card activity"><div class="eyebrow" style="color:var(--green)">Quality checks</div><h2 style="margin-top:4px">Before anything is final</h2><div class="activity-row"><div class="dot"></div><div><p><strong>Dates consistent</strong> · Order and complaint dates match.</p><time>Checked automatically</time></div></div><div class="activity-row"><div class="dot" style="background:#dfa65f;border-color:#fae3bb"></div><div><p><strong>2 extracted values need confirmation</strong> · Support thread, page 2.</p><time>Review required</time></div></div></div><div class="card activity"><div class="eyebrow" style="color:var(--green)">Template provenance</div><h2 style="margin-top:4px">Know what shaped the draft</h2><p class="muted" style="font-size:12px;margin-top:13px">Templates carry a version, source and review date. No document is labelled legally verified until an authorised reviewer completes that review.</p><a class="portal-link" style="display:inline-block;margin-top:17px" href="https://e-jagriti.gov.in/help-docs" target="_blank" rel="noreferrer">View official guidance ↗</a></div></div></section>
+
+        <section class="view" id="view-activity"><div class="page-head"><div><div class="eyebrow" style="color:var(--green)">Case CC-1048</div><h1>Everything has a timestamp.</h1><p class="lede">A simple activity trail for you, your case manager and any authorised reviewer.</p></div><span class="tag green">Private case record</span></div><div class="card timeline"><div class="card-head"><div><h2>Case timeline</h2><p class="muted tiny" style="margin-top:4px">Material activity and next actions</p></div><button class="btn ghost">Export timeline ↓</button></div><div class="timeline-item"><div class="timeline-date">11 Oct 2026<br><span style="font-weight:500">10:42 AM</span></div><div class="timeline-line"><div class="timeline-dot"></div></div><div><h3>Evidence bundle updated</h3><p>Two files were added and kept in their original format. The document inventory was refreshed.</p></div></div><div class="timeline-item"><div class="timeline-date">10 Oct 2026<br><span style="font-weight:500">4:18 PM</span></div><div class="timeline-line"><div class="timeline-dot"></div></div><div><h3>Filing packet prepared</h3><p>Complaint, index, verification page and annexure map are ready for your review.</p></div></div><div class="timeline-item"><div class="timeline-date">12 Aug 2026<br><span style="font-weight:500">11:05 AM</span></div><div class="timeline-line"><div class="timeline-dot"></div></div><div><h3>Jurisdiction check flagged</h3><p>Confirm the consumer address and transaction location before selecting the Commission.</p></div></div><div class="timeline-item"><div class="timeline-date">06 Aug 2026<br><span style="font-weight:500">9:21 AM</span></div><div class="timeline-line"><div class="timeline-dot"></div></div><div><h3>Case started</h3><p>Case CC-1048 created from a consumer service request.</p></div></div></div></section>
+      </div>
+    </main>
+  </div>
+  <div class="modal" id="record-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-card"><div class="modal-head"><div><div class="eyebrow" style="color:var(--green)">Manual submission record</div><h2 id="modal-title" style="margin-top:4px">What happened on e-Jagriti?</h2><p class="muted tiny" style="margin-top:5px">Only record what you personally observed. This does not submit anything to the portal.</p></div><button class="close" data-close-modal aria-label="Close">×</button></div><div class="form-grid"><label>Portal reference or case number (optional)<input id="portal-ref" placeholder="e.g. DCDRC/2026/001234" /></label><label>Filing date<input id="filing-date" type="date" /></label><label>Current status<input id="portal-status" placeholder="e.g. Payment completed; acknowledgement received" /></label><label>Next expected action<input id="next-action" placeholder="e.g. Await scrutiny" /></label></div><div class="modal-foot"><button class="btn ghost" data-close-modal>Cancel</button><button class="btn primary" id="save-record">Save user-reported record</button></div></div></div>
+  <div class="toast" id="toast">Saved to your private case record.</div>
+  <script>
+    const navButtons = [...document.querySelectorAll('[data-view]')];
+    const views = [...document.querySelectorAll('.view')];
+    const crumb = document.getElementById('crumb-title');
+    const names = {overview:'Overview',filing:'e-Jagriti filing',documents:'Documents',activity:'Activity'};
+    function showView(name) { views.forEach(v => v.classList.toggle('active', v.id === 'view-'+name)); navButtons.forEach(b => b.classList.toggle('active', b.dataset.view === name)); crumb.textContent = names[name]; window.scrollTo({top:0,behavior:'smooth'}); }
+    navButtons.forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
+    document.querySelectorAll('[data-view-link]').forEach(b => b.addEventListener('click', () => showView(b.dataset.viewLink)));
+    const modal = document.getElementById('record-modal');
+    document.querySelectorAll('[data-open-modal]').forEach(b => b.addEventListener('click', () => modal.classList.add('open')));
+    document.querySelectorAll('[data-close-modal]').forEach(b => b.addEventListener('click', () => modal.classList.remove('open')));
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+    const toast = document.getElementById('toast');
+    function notify(msg) { toast.textContent = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2600); }
+    function renderSubmission() { const saved = JSON.parse(localStorage.getItem('cc-submission') || 'null'); if (!saved) return; document.getElementById('submission-row').innerHTML = `<tr><td><span class="tag amber">${saved.status || 'Submitted'}</span></td><td>${saved.date ? 'Filed on '+saved.date+'. ' : ''}${saved.next || 'No next action added.'}</td><td>${saved.ref ? saved.ref : 'No reference uploaded'}</td><td><span class="tag blue">User-reported</span></td></tr>`; }
+    document.getElementById('save-record').addEventListener('click', () => { const data = {ref:document.getElementById('portal-ref').value.trim(), date:document.getElementById('filing-date').value, status:document.getElementById('portal-status').value.trim() || 'Submission recorded', next:document.getElementById('next-action').value.trim()}; localStorage.setItem('cc-submission', JSON.stringify(data)); renderSubmission(); modal.classList.remove('open'); notify('User-reported outcome saved.'); });
+    document.getElementById('next-step').addEventListener('click', e => { e.currentTarget.textContent='Step marked complete ✓'; e.currentTarget.classList.add('soft'); notify('Portal step saved to your checklist.'); });
+    document.getElementById('mark-ready').addEventListener('click', e => { e.currentTarget.textContent='Review marked complete ✓'; e.currentTarget.classList.add('soft'); notify('Your review status was saved.'); });
+    renderSubmission();
+  </script>
+  <script>
+    // Local-first functional layer. Replace these adapters with authenticated server storage before handling real client data.
+    (() => {
+      const CASE_KEY = 'cc-case-v2';
+      const FILE_KEY = 'cc-file-index-v2';
+      const names = { overview:'Overview', intake:'Case intake', filing:'e-Jagriti filing', documents:'Documents', activity:'Activity' };
+      const blankCase = { consumerName:'', consumerEmail:'', consumerMobile:'', consumerState:'', consumerAddress:'', oppositeName:'', oppositeAddress:'', product:'', purchaseDate:'', amount:'', orderRef:'', facts:'', relief:'' };
+      let caseData = Object.assign({}, blankCase, JSON.parse(localStorage.getItem(CASE_KEY) || '{}'));
+      let fileIndex = JSON.parse(localStorage.getItem(FILE_KEY) || '[]');
+      const $ = (s, root=document) => root.querySelector(s);
+      const $$ = (s, root=document) => [...root.querySelectorAll(s)];
+      const escapeHTML = value => String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+      const notify = message => { const toast = $('#toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2800); };
+      const saveCase = () => { localStorage.setItem(CASE_KEY, JSON.stringify(caseData)); };
+      const saveFiles = () => { localStorage.setItem(FILE_KEY, JSON.stringify(fileIndex)); };
+      const showView = name => { $$('.view').forEach(view => view.classList.toggle('active', view.id === 'view-'+name)); $$('[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === name)); const crumb = $('#crumb-title'); if (crumb) crumb.textContent = names[name] || name; window.scrollTo({top:0, behavior:'smooth'}); };
+      $$('[data-view]').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
+      $$('[data-view-link]').forEach(button => button.addEventListener('click', () => showView(button.dataset.viewLink)));
+      const overviewAdd = $('#view-overview .page-head .btn.primary');
+      if (overviewAdd) { overviewAdd.removeAttribute('data-open-modal'); overviewAdd.addEventListener('click', () => { const modal = $('#record-modal'); if (modal) modal.classList.remove('open'); showView('intake'); }); }
+      const docUpload = $('#view-documents .page-head .btn.primary');
+      if (docUpload) docUpload.addEventListener('click', () => showView('intake'));
+      $$('[data-case-field]').forEach(input => { input.value = caseData[input.dataset.caseField] || ''; input.addEventListener('input', () => { caseData[input.dataset.caseField] = input.value; saveCase(); updateRisks(); }); });
+      const formatBytes = bytes => bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${(bytes/1024).toFixed(1)} KB` : `${(bytes/1048576).toFixed(1)} MB`;
+      const fileType = file => file.type || file.name.split('.').pop().toUpperCase();
+      const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+      const loadScript = (src, globalName) => new Promise((resolve, reject) => { if (window[globalName]) return resolve(window[globalName]); const script = document.createElement('script'); script.src = src; script.onload = () => resolve(window[globalName]); script.onerror = reject; document.head.appendChild(script); });
+      const extractCandidates = text => {
+        const value = String(text || '');
+        const email = value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || '';
+        const mobile = value.match(/(?:\+91[\s-]?)?[6-9]\d{9}/)?.[0] || '';
+        const amount = value.match(/(?:₹|INR|Rs\.?)[\s]*([\d,]+(?:\.\d{1,2})?)/i)?.[1]?.replace(/,/g,'') || '';
+        const orderRef = value.match(/(?:order|invoice|ticket|reference|ref)[\s#:No.-]*([A-Z0-9][A-Z0-9-]{3,})/i)?.[1] || '';
+        const date = value.match(/\b(\d{1,2}[\/-]\d{1,2}[\/-](?:19|20)\d{2})\b/)?.[1] || '';
+        return { email, mobile, amount, orderRef, date };
+      };
+      const normaliseDate = raw => { const match = String(raw || '').match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/); return match ? `${match[3]}-${match[2].padStart(2,'0')}-${match[1].padStart(2,'0')}` : raw; };
+      async function extractText(file) {
+        const name = file.name.toLowerCase();
+        if (file.type.startsWith('text/') || /\.(txt|csv|json)$/.test(name)) return file.text();
+        if (file.type === 'application/pdf' || name.endsWith('.pdf')) {
+          const pdfjs = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs');
+          pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
+          const pdf = await pdfjs.getDocument({data: await file.arrayBuffer()}).promise; let text = '';
+          for (let pageNo=1; pageNo<=pdf.numPages; pageNo++) { const page = await pdf.getPage(pageNo); const content = await page.getTextContent(); text += content.items.map(item => item.str).join(' ') + '\n'; }
+          return text;
+        }
+        if (name.endsWith('.docx')) { const mammoth = await loadScript('https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js','mammoth'); return (await mammoth.extractRawText({arrayBuffer: await file.arrayBuffer()})).value; }
+        if (file.type.startsWith('image/') || /\.(jpg|jpeg|png)$/.test(name)) { const tesseract = await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js','Tesseract'); return (await tesseract.recognize(file,'eng')).data.text; }
+        return '';
+      }
+      const renderUploads = () => {
+        const list = $('#upload-list'); if (!list) return;
+        list.innerHTML = fileIndex.length ? fileIndex.map(file => `<div class="upload-item"><div class="file-meta"><strong>${escapeHTML(file.name)}</strong><small>${escapeHTML(file.type || 'document')} · ${escapeHTML(file.size)} · ${escapeHTML(file.status || 'uploaded')}</small></div><span class="extract-badge">${file.text ? 'Extracted · review' : 'Original saved'}</span></div>`).join('') : '<div class="empty" style="padding:18px 0">No evidence attached yet.</div>';
+        const preview = $('#facts-preview'); if (!preview) return;
+        const rows = fileIndex.flatMap(file => Object.entries(file.candidates || {}).filter(([,value]) => value).map(([key,value]) => ({key,value,file:file.name})));
+        preview.innerHTML = rows.length ? `<div class="eyebrow" style="color:var(--green);margin-top:14px">Candidate facts · confirm before use</div>` + rows.map(row => `<div class="fact-row"><label>${escapeHTML(row.key)}</label><div>${escapeHTML(row.value)} <span class="source-chip">${escapeHTML(row.file)}</span><button class="btn ghost apply-fact" data-key="${escapeHTML(row.key)}" data-value="${escapeHTML(row.value)}" style="float:right;padding:4px 7px;font-size:10px">Use</button></div></div>`).join('') : '';
+        $$('.apply-fact').forEach(button => button.addEventListener('click', () => { const map = {email:'consumerEmail',mobile:'consumerMobile',amount:'amount',orderRef:'orderRef',date:'purchaseDate'}; const field = map[button.dataset.key]; if (field) { caseData[field] = field === 'purchaseDate' ? normaliseDate(button.dataset.value) : button.dataset.value; const input = $(`[data-case-field="${field}"]`); if (input) input.value = caseData[field]; saveCase(); updateRisks(); notify(`${button.dataset.key} added as a suggestion. Please verify it.`); } }));
+      };
+      const updateRisks = () => { const required = ['consumerName','consumerAddress','oppositeName','oppositeAddress','facts','relief']; const missing = required.filter(key => !String(caseData[key] || '').trim()); const riskList = $('#risk-list'); if (!riskList) return; riskList.innerHTML = `${missing.length ? `<div class="risk"><div class="risk-icon">!</div><div><strong>${missing.length} required intake field${missing.length === 1 ? '' : 's'} missing</strong><p>${missing.map(key => key.replace(/([A-Z])/g,' $1').toLowerCase()).join(', ')}.</p></div></div>` : '<div class="risk ok"><div class="risk-icon">✓</div><div><strong>Core parties and facts supplied</strong><p>Still review jurisdiction, limitation and every extracted value.</p></div></div>'}<div class="risk"><div class="risk-icon">!</div><div><strong>Extraction is not verification</strong><p>OCR and document text are suggestions. Confirm names, dates, amounts and references manually.</p></div></div><div class="risk ok"><div class="risk-icon">✓</div><div><strong>Portal safeguards protected</strong><p>No password, OTP, CAPTCHA or automatic submission is collected here.</p></div></div>`; };
+      async function processFile(file) {
+        const record = {id:uid(), name:file.name, type:fileType(file), size:formatBytes(file.size), status:'Reading…', text:'', candidates:{}}; fileIndex.push(record); saveFiles(); renderUploads();
+        try { record.text = await extractText(file); record.candidates = extractCandidates(record.text); record.status = record.text ? 'Extracted; confirm candidates' : 'Uploaded; no text found'; } catch (error) { record.status = 'Uploaded; extraction needs review'; record.error = String(error.message || error); }
+        saveFiles(); renderUploads(); updateRisks();
+      }
+      const evidenceInput = $('#evidence-input'); const dropZone = $('#drop-zone');
+      if (evidenceInput) evidenceInput.addEventListener('change', event => [...event.target.files].forEach(processFile));
+      if (dropZone) { ['dragenter','dragover'].forEach(type => dropZone.addEventListener(type, event => { event.preventDefault(); dropZone.classList.add('drag'); })); ['dragleave','drop'].forEach(type => dropZone.addEventListener(type, event => { event.preventDefault(); dropZone.classList.remove('drag'); })); dropZone.addEventListener('drop', event => [...event.dataTransfer.files].forEach(processFile)); }
+      const saveIntake = $('#save-intake'); if (saveIntake) saveIntake.addEventListener('click', () => { saveCase(); saveFiles(); notify('Confirmed intake and evidence index saved in this browser.'); });
+      const makeDocHTML = (title, body) => `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHTML(title)}</title><style>body{font-family:Georgia,serif;max-width:780px;margin:46px auto;color:#1e2523;line-height:1.55}h1{text-align:center;font-size:22px;margin-bottom:28px}h2{font-size:15px;border-bottom:1px solid #999;padding-bottom:5px;margin-top:28px}p{font-size:13px}ol{font-size:13px}.meta{font-family:Arial,sans-serif;font-size:11px;color:#555}.signature{margin-top:65px;display:flex;justify-content:space-between}.note{font-family:Arial,sans-serif;background:#f4f7f4;padding:10px;font-size:11px}</style></head><body>${body}</body></html>`;
+      const p = text => `<p>${escapeHTML(text)}</p>`;
+      const partyBlock = () => `<p><strong>Complainant:</strong><br>${escapeHTML(caseData.consumerName || '[Confirm consumer name]')}<br>${escapeHTML(caseData.consumerAddress || '[Confirm complete address]')}<br>${escapeHTML(caseData.consumerEmail || '[Confirm email]')} · ${escapeHTML(caseData.consumerMobile || '[Confirm mobile]')}</p><p><strong>Opposite Party:</strong><br>${escapeHTML(caseData.oppositeName || '[Confirm opposite-party name]')}<br>${escapeHTML(caseData.oppositeAddress || '[Confirm complete address]')}</p>`;
+      const documents = {
+        complaint: () => makeDocHTML('Consumer Complaint — Draft', `<div class="meta">DRAFT · Prepared from confirmed intake fields · Review required before filing</div><h1>BEFORE THE ${escapeHTML(caseData.consumerState || '[STATE]')} CONSUMER DISPUTES REDRESSAL COMMISSION</h1>${partyBlock()}<h2>Consumer Complaint</h2>${p('The complainant states the following facts and grounds for relief. This draft is generated from user-provided information and must be reviewed for accuracy.') }<h2>1. Jurisdiction</h2>${p(`The complainant proposes filing before the appropriate Commission based on the transaction and territorial facts supplied. Commission selection must be independently confirmed against the current applicable rule and official portal options. Consideration paid: ₹${caseData.amount || '[confirm amount]'}.`)}<h2>2. Facts</h2>${p(caseData.facts || '[Add a complete chronology of the transaction, promised performance, issue, communications and loss.]')}<h2>3. Relief requested</h2>${p(caseData.relief || '[Confirm the specific relief requested and amount, if any.]')}<h2>4. List of documents</h2><ol>${fileIndex.length ? fileIndex.map(file => `<li>${escapeHTML(file.name)}</li>`).join('') : '<li>[Attach and number supporting documents]</li>'}</ol><h2>Verification</h2>${p('I, the complainant named above, verify that the facts stated above are true to my knowledge and belief, subject to final review and the formal requirements applicable to this filing.') }<div class="signature"><span>Place: __________________</span><span>Signature: __________________</span></div><p class="note">This is a generated draft, not legal advice, not a filing confirmation, and not a substitute for authorised legal review.</p>`),
+        index: () => makeDocHTML('Index of Documents — Draft', `<div class="meta">DRAFT · Running page numbers should be updated after final pagination</div><h1>INDEX OF DOCUMENTS</h1>${partyBlock()}<table style="width:100%;border-collapse:collapse;font-size:13px"><tr><th style="border:1px solid #999;padding:8px;text-align:left">S. No.</th><th style="border:1px solid #999;padding:8px;text-align:left">Description</th><th style="border:1px solid #999;padding:8px;text-align:left">Page No.</th></tr><tr><td style="border:1px solid #999;padding:8px">1</td><td style="border:1px solid #999;padding:8px">Consumer Complaint</td><td style="border:1px solid #999;padding:8px">1–__</td></tr>${fileIndex.map((file,index) => `<tr><td style="border:1px solid #999;padding:8px">${index+2}</td><td style="border:1px solid #999;padding:8px">Annexure ${String.fromCharCode(65+index)} — ${escapeHTML(file.name)}</td><td style="border:1px solid #999;padding:8px">__</td></tr>`).join('')}</table><p class="note">Update page numbers after the final complaint and annexures are assembled. Keep the index and pagination consistent with the packet uploaded to the official portal.</p>`),
+        parties: () => makeDocHTML('Memo of Parties — Draft', `<div class="meta">DRAFT · Check complete addresses and contact details</div><h1>MEMO OF PARTIES</h1>${partyBlock()}${p('The party details above are reproduced from the intake record. Do not assume that every entity mentioned in a document is a legally liable party; confirm the correct opposite party before filing.') }`),
+        timeline: () => makeDocHTML('List of Dates and Events — Draft', `<div class="meta">DRAFT · Dates extracted from documents require confirmation</div><h1>LIST OF DATES AND EVENTS</h1><table style="width:100%;border-collapse:collapse;font-size:13px"><tr><th style="border:1px solid #999;padding:8px;text-align:left">Date</th><th style="border:1px solid #999;padding:8px;text-align:left">Event</th><th style="border:1px solid #999;padding:8px;text-align:left">Source</th></tr><tr><td style="border:1px solid #999;padding:8px">${escapeHTML(caseData.purchaseDate || '[confirm]')}</td><td style="border:1px solid #999;padding:8px">Purchase / agreement for ${escapeHTML(caseData.product || '[product or service]')}</td><td style="border:1px solid #999;padding:8px">Intake</td></tr><tr><td style="border:1px solid #999;padding:8px">[confirm]</td><td style="border:1px solid #999;padding:8px">Issue discovered and complaint raised</td><td style="border:1px solid #999;padding:8px">Evidence / user</td></tr></table>${p(caseData.facts || '[Add the remaining chronology in date order.]')}`),
+      };
+      const download = (filename, content, mime='application/msword') => { const blob = new Blob([content], {type:mime}); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = filename; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1200); };
+      const preview = kind => { const win = window.open('', '_blank'); if (win) { win.document.write(documents[kind]()); win.document.close(); } };
+      const downloadDoc = kind => { if (kind === 'packet') { const packet = {case:caseData, evidence:fileIndex.map(file => ({name:file.name,type:file.type,size:file.size,status:file.status,candidates:file.candidates})), sourceRegistry:[{title:'e-Jagriti Consumer Complaint Help Document',url:'https://e-jagriti.gov.in/static/media/CC_Filing.34e0fc5dd03b1d864cab.pdf',verified:'March 2025'},{title:'e-Jagriti Help Documents',url:'https://e-jagriti.gov.in/help-docs',verified:'11 Oct 2026'},{title:'Consumer Protection Act, 2019',url:'https://www.indiacode.nic.in/bitstream/123456789/15256/1/a2019-35.pdf',verified:'11 Oct 2026'},{title:'NCDRC Consumer Protection Regulations, 2020',url:'https://ncdrc.nic.in/bare_acts/CCPRegulations2020.pdf',verified:'11 Oct 2026'}]}; download('consumer-case-CC-1048-bundle.json', JSON.stringify(packet,null,2), 'application/json'); notify('Case bundle downloaded.'); return; } download(`CC-1048-${kind}-draft.doc`, documents[kind](), 'application/msword'); notify('Editable draft downloaded.'); };
+      const docView = $('#view-documents');
+      if (docView && !$('#generated-docs-card')) { const card = document.createElement('div'); card.id='generated-docs-card'; card.className='card section-card'; card.innerHTML='<div class="card-head"><div><div class="eyebrow" style="color:var(--green)">Generated from confirmed facts</div><h2 style="margin-top:4px">Create the filing documents</h2><p class="muted tiny" style="margin-top:4px">Download editable Word-compatible drafts and open a printable preview. Review every statement before filing.</p></div><span class="rule-pill">No legal-verification claim</span></div><div class="doc-actions"><button class="btn soft" data-download-doc="complaint">Complaint draft</button><button class="btn ghost" data-download-doc="index">Index</button><button class="btn ghost" data-download-doc="parties">Memo of parties</button><button class="btn ghost" data-download-doc="timeline">List of dates</button><button class="btn ghost" data-preview-doc="complaint">Printable preview</button><button class="btn primary" data-download-doc="packet">Case bundle</button></div>'; docView.appendChild(card); }
+      $$('[data-download-doc]').forEach(button => button.addEventListener('click', () => downloadDoc(button.dataset.downloadDoc)));
+      $$('[data-preview-doc]').forEach(button => button.addEventListener('click', () => preview(button.dataset.previewDoc)));
+      const generate = $('#generate-docs'); if (generate) generate.addEventListener('click', () => { saveCase(); showView('documents'); notify('Draft documents are ready from the current intake.'); });
+      renderUploads(); updateRisks();
+    })();
+  </script>
+</body>
+</html>
+
