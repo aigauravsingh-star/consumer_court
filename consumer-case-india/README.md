@@ -15,6 +15,12 @@ The local workflow now supports:
 - Word-compatible complaint, index, memo-of-parties and list-of-dates drafts;
 - a JSON case bundle with evidence metadata and official source registry;
 - scrutiny-oriented checks based on e-Jagriti guidance, the Consumer Protection Act and NCDRC filing patterns.
+- a scrutiny copilot with readiness scoring and review flags;
+- objection intake with correction-list generation and objection history;
+- case lifecycle tracking from draft through user-reported submission and scrutiny;
+- packet version snapshots;
+- a service layer for self-serve preparation, document review and managed case support;
+- manual submission evidence metadata without collecting portal credentials.
 
 This remains a buildless static local app with localStorage as its development adapter. Do not upload real sensitive documents to this local demo. Before production use, replace localStorage with authenticated access controls, encrypted private object storage, malware scanning, a database, server-side document generation, audit logs, and reviewed legal-rule versions. Automated e-Jagriti submission is intentionally not implemented: users must complete authentication, CAPTCHA, payment and final submission on the official portal unless an authorised integration is separately verified.
 
