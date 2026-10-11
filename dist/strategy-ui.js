@@ -11,7 +11,7 @@
   const uid = () => "s-" + (window.crypto?.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).slice(2));
   let storageError = "";
   function read(storageKey, fallback) {
-    try { const value = JSON.parse(localStorage.getItem(storageKey) || "null"); return value ?? fallback; }
+    try { return window.ConsumerStore ? ConsumerStore.read(storageKey, fallback) : JSON.parse(localStorage.getItem(storageKey) || "null") ?? fallback; }
     catch (_) { storageError = "A saved record could not be read. Export accessible records before repairing browser storage."; return fallback; }
   }
   const defaults = () => ({ sector: "general", purpose: "unknown", route: "ordinary", causeDate: "", filingDate: today(), causeBasis: "", causeState: "",
@@ -23,13 +23,22 @@
   const state = Object.assign(defaults(), raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {});
   ["allegations", "remedies", "chronology", "reviewRequests", "outcomes", "snapshots"].forEach(name => { if (!Array.isArray(state[name])) state[name] = []; });
   ["evidence", "packet", "caseReview", "tasks"].forEach(name => { if (!state[name] || typeof state[name] !== "object" || Array.isArray(state[name])) state[name] = {}; });
-  const caseData = () => { const value=read("cc-case-v2", {}); return value && typeof value==="object" && !Array.isArray(value) ? value : {}; };
-  const files = () => { const list = read("cc-file-index-v2", []); return Array.isArray(list) ? list : []; };
-  const report = () => Core.evaluate(caseData(), state, files());
+  const caseData = () => { const value=window.ConsumerCaseIntake?.getCase() || read("cc-case-v2", {}); return value && typeof value==="object" && !Array.isArray(value) ? value : {}; };
+  const files = () => { const list = window.ConsumerCaseIntake?.getFiles() || read("cc-file-index-v2", []); return Array.isArray(list) ? list : []; };
+  const report = () => {
+    const r = Core.evaluate(caseData(), state, files());
+    if (window.ConsumerProduct && window.ConsumerStore) {
+      const ops = window.ConsumerProductHub?.getOps() || ConsumerStore.read("cc-operations-v1", {});
+      const extra = ConsumerProduct.operationalGaps(ops, state.represented);
+      r.gaps.push(...extra);
+      if (extra.length && r.label === "Ready to brief an advocate") r.label = "Resolve key gaps";
+    }
+    return r;
+  };
   function message(text) { const toast = $("#toast"); if (toast) { toast.textContent = text; toast.classList.add("show"); setTimeout(() => toast.classList.remove("show"), 2800); } }
   function save() {
     state.updatedAt = new Date().toISOString();
-    try { localStorage.setItem(key, JSON.stringify(state)); storageError = ""; return true; }
+    try { if (window.ConsumerStore && !ConsumerStore.write(key, state)) throw new Error("Save failed"); if (!window.ConsumerStore) localStorage.setItem(key, JSON.stringify(state)); storageError = ""; return true; }
     catch (_) { storageError = "The browser could not save this change. Download the briefing pack to keep your work."; const status = $("#strategy-save-status"); if (status) status.textContent = storageError; message(storageError); return false; }
   }
   const field = (name, label, type = "text", options = null, wide = false) => `<label class="${wide ? "wide" : ""}">${h(label)}${options
@@ -191,7 +200,12 @@
     $$(".strategy-pane", host).forEach(p => { p.hidden = p.id !== "strategy-pane-" + name; });
     refresh();
   }
-  function getBrief() { return Core.brief(caseData(), state, files(), Library.cases); }
+  function getBrief() {
+    const b = Core.brief(caseData(), state, files(), Library.cases);
+    b.assessment = report();
+    if (window.ConsumerProductHub) b.operations = ConsumerProductHub.getOps();
+    return b;
+  }
   function download(name, content, type) { const url = URL.createObjectURL(new Blob([content], { type })), link = document.createElement("a"); link.href = url; link.download = name; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1500); }
   function briefHtml(b) {
     const section = (title, content) => "<h2>" + h(title) + "</h2>" + content;
@@ -199,6 +213,7 @@
     const list = items => "<ol>" + items.map(x => "<li>" + h(x) + "</li>").join("") + "</ol>";
     return '<!doctype html><html><head><meta charset="utf-8"><title>Advocate briefing pack</title><style>body{font:14px/1.6 Georgia,serif;max-width:850px;margin:40px auto}h1{font-size:25px}h2{font-size:18px;border-bottom:1px solid #bbb;padding-bottom:5px;margin-top:28px}p,li{white-space:pre-wrap}small{font:11px Arial,sans-serif}td,th{border:1px solid #ccc;padding:7px;text-align:left}table{border-collapse:collapse;width:100%}</style></head><body><h1>Consumer case advocate briefing pack</h1><small>DRAFT FOR HUMAN REVIEW • ' + h(b.generatedAt) + " • Rules " + h(b.rulesVersion) + "</small>"
       + section("Client instructions", paragraph(b.profile.clientGoal) + paragraph("Budget: " + (Core.amount(b.profile.clientBudget) === null ? "unconfirmed" : money(Core.amount(b.profile.clientBudget))) + " • Preferred update: " + b.profile.communicationPreference))
+      + (b.operations ? section("Engagement and additional client instructions", paragraph("User-recorded engagement, not authenticated or independently verified.\nAdvocate: " + (b.operations.engagement.advocateName || "[not appointed]") + "\nEnrollment details: " + (b.operations.engagement.enrollment || "[confirm]") + "\nScope: " + (b.operations.engagement.scope || "[confirm]") + "\nFee terms: " + (b.operations.engagement.feeTerms || "[confirm]")) + paragraph(b.operations.writtenInstructions) + list((b.operations.parties || []).map(p => p.role + ": " + (p.name || "[confirm]") + "\nAddress: " + p.address + "\nJoinder reason: " + p.reason)) + paragraph("Separate costs (blank means unknown): " + Object.entries(b.operations.costs || {}).map(([key,value]) => key + ": " + (value || "[not confirmed]")).join("; ") + "\nOfficial fee source: " + (b.operations.feeSource || "[confirm current official fee]") + "\nScope / refund terms: " + (b.operations.refundTerms || "[confirm]"))) : "")
       + section("Parties and transaction", paragraph("Consumer: " + (b.case.consumerName || "[confirm]") + "\n" + (b.case.consumerAddress || "")) + paragraph("Opposite party: " + (b.case.oppositeName || "[confirm]") + "\n" + (b.case.oppositeAddress || "")) + paragraph("Product / service: " + (b.case.product || "[confirm]") + " • Purchase date: " + (b.case.purchaseDate || "[confirm]") + " • Consideration paid: " + (b.case.amount || "[confirm]")))
       + section("Consumer status, forum and limitation", paragraph("Purpose: " + b.profile.purpose + "\nRespondent role: " + b.profile.respondentRole) + paragraph(b.assessment.forum.text) + paragraph("Territory: " + b.profile.territorialBasis + " • " + b.profile.causeDistrict + ", " + b.profile.causeState) + paragraph("Cause-of-action date: " + (b.profile.causeDate || "[confirm]") + "\nBasis: " + b.profile.causeBasis + "\n" + b.assessment.limitation.text))
       + section("Confirmed intake facts", paragraph(b.case.facts)) + section("Chronology", list(b.profile.chronology.slice().sort((a, c) => String(a.date).localeCompare(String(c.date))).map(e => e.date + " • " + e.event + " • " + e.source)))
@@ -276,4 +291,3 @@
   window.ConsumerStrategyWorkspace = { refresh, getBrief, briefHtml, openTab };
   refresh();
 })();
-

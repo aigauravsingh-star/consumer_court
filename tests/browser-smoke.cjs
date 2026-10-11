@@ -12,7 +12,8 @@ const artifacts = fs.mkdtempSync(path.join(os.tmpdir(), "consumer-strategy-qa-")
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 const server = http.createServer((request, response) => {
   const name = new URL(request.url, "http://localhost").pathname.slice(1) || "index.html";
-  if (!["index.html", "strategy-core.js", "strategy-data.js", "strategy-ui.js", "strategy.css"].includes(name)) {
+  if (!["index.html", "strategy-core.js", "strategy-data.js", "strategy-ui.js", "strategy.css",
+    "product-core.js", "storage-guard.js", "product-ui.js", "product.css"].includes(name)) {
     response.writeHead(404); response.end(); return;
   }
   response.setHeader("Content-Type", name.endsWith(".js") ? "text/javascript" :
@@ -87,6 +88,7 @@ async function main() {
     if (!localStorage.getItem("smoke-initialized")) {
       localStorage.setItem("cc-case-v2", JSON.stringify(${JSON.stringify(fixtures.case)}));
       localStorage.setItem("cc-file-index-v2", JSON.stringify(${JSON.stringify(fixtures.evidence)}));
+      localStorage.setItem("cc-operations-v1", JSON.stringify({consents:{processing:true,external:false}}));
       localStorage.setItem("smoke-initialized", "true");
     }
     window.testDownloads = [];
@@ -236,6 +238,201 @@ async function main() {
     return b.profile.allegations[0].promise==='Edited promise' && b.evidence.length===2 &&
       b.evidence[0].reviewed && b.profile.snapshots.length===0;
   })()`);
+  await check("overview, documents and filing use real case data rather than sample progress", `(() => {
+    ConsumerProductHub.show('overview'); ConsumerProductHub.refresh();
+    const overview=document.querySelector('#view-overview').textContent;
+    const docs=document.querySelector('#view-documents').textContent;
+    const filing=document.querySelector('#view-filing').textContent;
+    return !overview.includes('NovaCart') && !overview.includes('75%') && !docs.includes('nova-order') &&
+      overview.includes('Test refrigerator') && filing.includes('2025-02-01') && filing.includes('25,000')===false &&
+      filing.includes('25000') && filing.includes('No portal action is performed here');
+  })()`);
+  await check("review enquiries actually persist and are explicitly not sent", `(() => {
+    testSet('#review-email','review@example.invalid');testSet('#review-note','Review limitation and proof');
+    testClick('#submit-review');
+    const saved=ConsumerStore.read('cc-review-request-v1',{});
+    return saved.email==='review@example.invalid' && saved.status==='Local draft — not sent' &&
+      document.querySelector('#review-status').textContent.includes('not sent');
+  })()`);
+  await check("manual portal record requires an observed status and traps keyboard focus", `(() => {
+    ConsumerProductHub.show('filing');testClick('[data-care-action="submission"]');
+    testSet('#portal-status','');testClick('#save-record');
+    const modal=document.querySelector('#record-modal'),close=modal.querySelector('[data-close-modal]');
+    close.focus();close.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',shiftKey:true,bubbles:true,cancelable:true}));
+    return modal.classList.contains('open') && !ConsumerStore.read('cc-submission',null) &&
+      document.activeElement.id==='save-record';
+  })()`);
+  await check("failed portal record storage never announces a saved outcome", `(() => {
+    const original=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(key,value){if(key==='cc-submission')throw Error('Synthetic quota exceeded');return original.call(this,key,value);};
+    testSet('#portal-status','Acknowledgement received');testSet('#filing-date','2026-10-11');
+    testClick('#save-record');Storage.prototype.setItem=original;
+    return document.querySelector('#record-modal').classList.contains('open') &&
+      !localStorage.getItem('cc-submission') && ConsumerStore.hasUnsaved() &&
+      document.querySelector('#toast').textContent.includes('could not be saved');
+  })()`);
+  await check("manual status saves explicitly as user-reported and recovers after quota failure", `(() => {
+    testClick('#save-record');
+    return !document.querySelector('#record-modal').classList.contains('open') &&
+      ConsumerStore.read('cc-submission',{}).label.includes('not independently verified') &&
+      !ConsumerStore.hasUnsaved() && document.querySelector('#view-filing').textContent.includes('Acknowledgement received');
+  })()`);
+  await check("withdrawn processing consent prevents further uploads", `(async () => {
+    ConsumerProductHub.show('care');ConsumerProductHub.openTab('privacy');
+    testSet('[data-care-group="consents"][data-care-key="processing"]',false);
+    const before=ConsumerCaseIntake.getFiles().length,transfer=new DataTransfer();
+    transfer.items.add(new File(['Sample data'], 'blocked.txt',{type:'text/plain'}));
+    const input=document.querySelector('#evidence-input');input.files=transfer.files;
+    input.dispatchEvent(new Event('change',{bubbles:true}));
+    await new Promise(r=>setTimeout(r,100));
+    testSet('[data-care-group="consents"][data-care-key="processing"]',true);
+    return ConsumerCaseIntake.getFiles().length===before;
+  })()`);
+  await check("duplicate bytes, unsafe types and disguised PDFs do not create evidence records", `(async () => {
+    const before=ConsumerCaseIntake.getFiles().length,transfer=new DataTransfer();
+    transfer.items.add(new File(['Invoice TEST-002 INR 12345 Email: sample@example.invalid'], 'duplicate.txt',{type:'text/plain'}));
+    transfer.items.add(new File(['<script>alert(1)</script>'], 'unsafe.html',{type:'text/html'}));
+    transfer.items.add(new File(['Not a PDF'], 'fake.pdf',{type:'application/pdf'}));
+    const input=document.querySelector('#evidence-input');input.files=transfer.files;
+    input.dispatchEvent(new Event('change',{bubbles:true}));await new Promise(r=>setTimeout(r,250));
+    return ConsumerCaseIntake.getFiles().length===before;
+  })()`);
+  await check("Hindi guidance and Hindi OCR choice persist independently of legal drafts", `(() => {
+    ConsumerProductHub.openTab('customer');testSet('#care-language','hi');testSet('#care-ocr','hin+eng');
+    return document.querySelector('#care-journey').textContent.includes('सबूत') &&
+      ConsumerProductHub.getOps().ocrLanguage==='hin+eng' && ConsumerCaseDocuments.generate('complaint').includes('DRAFT');
+  })()`);
+  await check("additional parties appear in the memo and require a joinder reason", `(() => {
+    ConsumerProductHub.openTab('lawyer');testClick('[data-care-action="add-party"]');
+    for(const [k,v]of Object.entries({name:'Test Manufacturer Ltd',address:'Test service office',reason:'Warranty undertaking'}))
+      testSet('[data-care-record="parties"][data-care-key="'+k+'"]',v);
+    const doc=ConsumerCaseDocuments.generate('parties');
+    return doc.includes('Test Manufacturer Ltd') && doc.includes('Test service office') && doc.includes('Warranty undertaking');
+  })()`);
+  await check("represented matters flag missing engagement without blocking self-filing", `(() => {
+    ConsumerProductHub.show('team');ConsumerStrategyWorkspace.openTab('assessment');
+    testSet('[data-strategy-field="represented"]',true);
+    return ConsumerStrategyWorkspace.getBrief().assessment.gaps.some(g=>g.id==='engagement');
+  })()`);
+  await check("complete advocate engagement remains user-attested rather than verified", `(() => {
+    ConsumerProductHub.show('care');ConsumerProductHub.openTab('lawyer');
+    for(const [k,v]of Object.entries({advocateName:'Test Advocate',enrollment:'Test Bar record',scope:'Draft review only',feeTerms:'Written scope fee'}))
+      testSet('[data-care-group="engagement"][data-care-key="'+k+'"]',v);
+    for(const k of ['conflictChecked','termsAccepted','advocateAccepted','sharingApproved'])
+      testSet('[data-care-group="engagement"][data-care-key="'+k+'"]',true);
+    return !ConsumerStrategyWorkspace.getBrief().assessment.gaps.some(g=>g.id==='engagement') &&
+      document.querySelector('#care-engagement-state').textContent.includes('not independently verified');
+  })()`);
+  await check("cost transparency treats blank fees as unknown, then calculates entered totals", `(() => {
+    ConsumerProductHub.openTab('customer');
+    if(!document.querySelector('#care-cost-total').textContent.includes('unknown')) return false;
+    for(const [k,v]of Object.entries({platform:'0',advocate:'500',government:'0',expenses:'100'}))
+      testSet('[data-care-group="costs"][data-care-key="'+k+'"]',v);
+    return document.querySelector('#care-cost-total').textContent.includes('₹600');
+  })()`);
+  await check("deadline calendar and support exports use recorded facts without sending reminders", `(async () => {
+    ConsumerProductHub.openTab('deadlines');
+    for(const [selector,value]of Object.entries({'#care-date-title':'Hearing','#care-date-date':'2026-12-31',
+      '#care-date-source':'Order paragraph 3','#care-date-owner':'Test Advocate','#care-ticket-note':'Need a readable original'}))
+      testSet(selector,value);
+    testClick('[data-care-action="add-date"]');testClick('[data-care-action="calendar"]');
+    testClick('[data-care-action="add-ticket"]');
+    const calendar=testDownloads.find(d=>d.name==='consumer-case-reminders.ics');
+    const text=await calendar.blob.text();
+    return text.includes('DTSTART;VALUE=DATE:20261231') && text.includes('DTEND;VALUE=DATE:20270101') &&
+      ConsumerProductHub.getOps().tickets.length===1 && document.querySelector('#care-tickets').textContent.includes('not sent');
+  })()`);
+  await check("founder worksheet flags capacity that cannot support break-even volume", `(() => {
+    ConsumerProductHub.openTab('owner');
+    const data={netRevenue:'2000',advocatePayout:'500',reviewMinutes:'60',supportMinutes:'30',hourlyCost:'400',
+      ocrCost:'20',storageCost:'10',acquisitionCost:'200',refundReserve:'70',monthlyFixed:'60000',staffHours:'120'};
+    for(const [k,v]of Object.entries(data))testSet('[data-care-group="owner"][data-care-key="'+k+'"]',v);
+    ConsumerProductHub.openTab('owner');
+    return document.querySelector('#care-economics').textContent.includes('cannot support') &&
+      document.querySelector('#care-launch').textContent.includes('launch blocker');
+  })()`);
+  await check("affidavit draft is unsigned and contains review placeholders, not a legal certification", `(() => {
+    const doc=ConsumerProductHub.extraDraft('affidavit');
+    return doc.includes('Synthetic Consumer') && doc.includes('UNSIGNED DRAFT') && doc.includes('[confirm') &&
+      doc.includes('not an executed affidavit');
+  })()`);
+  await check("encrypted browser backup excludes plaintext and includes operational case records", `(async () => {
+    ConsumerProductHub.openTab('privacy');
+    testSet('#care-backup-pass','A long browser test passphrase');testSet('#care-backup-confirm','A long browser test passphrase');
+    testClick('[data-care-action="backup"]');
+    for(let i=0;i<100&&!testDownloads.some(d=>d.name.endsWith('.ccbackup'));i++)await new Promise(r=>setTimeout(r,100));
+    const exported=testDownloads.find(d=>d.name.endsWith('.ccbackup'));if(!exported)return false;
+    window.testBackupText=await exported.blob.text();
+    const data=await ConsumerProduct.decryptBackup(JSON.parse(testBackupText),'A long browser test passphrase');
+    return !testBackupText.includes('Synthetic Consumer') && data.records['cc-operations-v1'].parties.length===1 &&
+      !document.querySelector('#care-backup-pass').value;
+  })()`);
+  await check("backup inspection changes no records and unconfirmed restore is blocked", `(async () => {
+    const transfer=new DataTransfer();transfer.items.add(new File([testBackupText],'test.ccbackup',{type:'application/json'}));
+    document.querySelector('#care-restore-file').files=transfer.files;
+    testSet('#care-restore-pass','A long browser test passphrase');
+    const before=localStorage.getItem('cc-case-v2');testClick('[data-care-action="inspect-backup"]');
+    for(let i=0;i<100&&!document.querySelector('#care-restore-preview').textContent;i++)await new Promise(r=>setTimeout(r,100));
+    testClick('[data-care-action="restore"]');
+    return document.querySelector('#care-restore-preview').textContent.includes('Preview only') &&
+      localStorage.getItem('cc-case-v2')===before;
+  })()`);
+  await check("unconfirmed erasure leaves this case and unrelated storage intact", `(() => {
+    localStorage.setItem('unrelated-user-data','Keep');
+    const before=localStorage.getItem('cc-case-v2');testClick('[data-care-action="delete"]');
+    return localStorage.getItem('cc-case-v2')===before && localStorage.getItem('unrelated-user-data')==='Keep';
+  })()`);
+  await check("wrong backup passphrase clears staged restore without replacing records", `(async () => {
+    testSet('#care-restore-pass','A wrong browser passphrase');
+    const before=localStorage.getItem('cc-case-v2');testClick('[data-care-action="inspect-backup"]');
+    for(let i=0;i<100&&!document.querySelector('#toast').textContent.includes('could not be unlocked');i++)await new Promise(r=>setTimeout(r,100));
+    testSet('#care-restore-confirm','RESTORE');testClick('[data-care-action="restore"]');
+    return localStorage.getItem('cc-case-v2')===before &&
+      !document.querySelector('#care-restore-preview').textContent &&
+      document.querySelector('#toast').textContent.includes('Inspect and unlock');
+  })()`);
+  await check("stored submission values cannot render active HTML", `(() => {
+    ConsumerStore.write('cc-submission',{status:'<img src=x onerror="window.injected=true">',ref:'Test',date:'2026-10-11',next:'Await scrutiny'});
+    ConsumerProductHub.refresh();
+    return !window.injected && document.querySelector('#view-filing img')===null &&
+      document.querySelector('#view-filing').textContent.includes('<img src=x');
+  })()`);
+  // Test corruption and successful restore in the isolated browser, never in the user's profile.
+  await evaluate("window.savedSmokeBackup = testBackupText; localStorage.setItem('cc-case-v2','{damaged');");
+  await command("Page.reload");await until("!!window.ConsumerProductHub");
+  await check("damaged browser records are preserved while the app remains usable", `(() => {
+    return localStorage.getItem('cc-case-v2')==='{damaged' &&
+      !document.querySelector('#care-storage-alert').hidden && !!ConsumerProductHub;
+  })()`);
+  // Rebuild a valid fixture backup from the in-memory test runner's known case and existing strategy.
+  const restoreText=await evaluate(`(() => {
+    const data=ConsumerStore.snapshot();
+    data.records['cc-case-v2']=${JSON.stringify(fixtures.case)};
+    return JSON.stringify(data);
+  })()`);
+  await evaluate(`(async () => {
+    ConsumerProductHub.show('care');ConsumerProductHub.openTab('privacy');
+    const transfer=new DataTransfer();transfer.items.add(new File([${JSON.stringify(restoreText)}],'recovery.json',{type:'application/json'}));
+    document.querySelector('#care-restore-file').files=transfer.files;
+    testClick('[data-care-action="inspect-backup"]');
+    await new Promise(r=>setTimeout(r,100));
+    testSet('#care-restore-confirm','RESTORE');
+    setTimeout(()=>testClick('[data-care-action="restore"]'),0);
+    return true;
+  })()`);
+  await pause(400);await until("!!window.ConsumerProductHub");
+  await check("confirmed UI restore recovers the case and preserves unrelated storage", `(() => {
+    return ConsumerCaseIntake.getCase().consumerName==='Synthetic Consumer' &&
+      localStorage.getItem('unrelated-user-data')==='Keep' && ConsumerStore.issues().length===0;
+  })()`);
+  await check("care records, review enquiry and additional parties survive reload", `(() => {
+    const o=ConsumerProductHub.getOps();
+    return o.language==='hi' && o.parties[0].name==='Test Manufacturer Ltd' &&
+      o.deadlines.length===1 && ConsumerStore.read('cc-review-request-v1',{}).email==='review@example.invalid';
+  })()`);
+  await evaluate("ConsumerProductHub.show('care');ConsumerProductHub.openTab('customer');");
+  await pause(300);await screenshot("care-desktop.png");
+  await evaluate("ConsumerProductHub.show('team');");
   await pause(300); // Allow the existing view entrance animation to finish before visual inspection.
   await screenshot("desktop.png");
   await command("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
@@ -248,6 +445,24 @@ async function main() {
     const tab=document.querySelector('#strategy-tab-assessment');
     tab.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
     return document.querySelector('#strategy-tab-evidence').getAttribute('aria-selected')==='true';
+  })()`);
+  await check("workspace care supports keyboard tabs and fits mobile screens", `(() => {
+    ConsumerProductHub.show('care');ConsumerProductHub.openTab('customer');
+    document.querySelector('#care-tab-customer').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
+    return document.querySelector('#care-tab-lawyer').getAttribute('aria-selected')==='true' &&
+      document.documentElement.scrollWidth<=window.innerWidth+1;
+  })()`);
+  await pause(300);await screenshot("care-mobile.png");
+  await evaluate(`(() => {
+    ConsumerProductHub.openTab('privacy');testSet('#care-delete-confirm','DELETE CASE');
+    setTimeout(()=>testClick('[data-care-action="delete"]'),0);return true;
+  })()`);
+  await pause(400);await until("!!window.ConsumerProductHub");
+  await check("confirmed UI erasure leaves a genuinely empty workspace and unrelated records", `(() => {
+    const text=document.querySelector('#view-overview').textContent;
+    return !localStorage.getItem('cc-case-v2') && !localStorage.getItem('cc-file-index-v2') &&
+      localStorage.getItem('unrelated-user-data')==='Keep' && !text.includes('Synthetic Consumer') &&
+      ConsumerCaseIntake.getFiles().length===0;
   })()`);
   assert.deepEqual(errors, [], "Uncaught browser errors");
   console.log(JSON.stringify({ passed: checks.length, errors: errors.length, artifacts }, null, 2));
@@ -263,4 +478,3 @@ main().catch(async error => {
   if (child) child.kill();
   server.close();
 });
-

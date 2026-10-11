@@ -1,14 +1,15 @@
+param([ValidateRange(1024,65535)][int]$Port = 4173)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $listener = [System.Net.HttpListener]::new()
-$listener.Prefixes.Add('http://localhost:4173/')
+$listener.Prefixes.Add("http://localhost:$Port/")
 $listener.Start()
-Write-Host 'ConsumerCase India running at http://localhost:4173/'
+Write-Host "ConsumerCase India running at http://localhost:$Port/"
 try {
   while ($listener.IsListening) {
     $context = $listener.GetContext()
     $path = $context.Request.Url.AbsolutePath
-    $assetNames = @('index.html','strategy-core.js','strategy-data.js','strategy-ui.js','strategy.css')
+    $assetNames = @('index.html','strategy-core.js','strategy-data.js','strategy-ui.js','strategy.css','product-core.js','storage-guard.js','product-ui.js','product.css')
     $asset = if ($path -eq '/') { 'index.html' } else { $path.TrimStart('/') }
     $file = if ($assetNames -contains $asset) { Join-Path $root ('dist\' + $asset) } else { $null }
     if ($file -and (Test-Path -LiteralPath $file)) {
@@ -29,4 +30,3 @@ try {
   $listener.Stop()
   $listener.Close()
 }
-

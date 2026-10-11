@@ -61,7 +61,6 @@ Relief totals distinguish additional cash, alternatives and non-cash requests. E
 
 The new strategy data is isolated under `cc-strategy-v1`; earlier intake and legacy review/outcome records are preserved. Exports and snapshots include the actual recorded file, assessment and selected authorities. Snapshots are deep copies and do not recursively embed previous snapshots.
 
-This is still a browser-local prototype. Original documents are not persistently stored, client records are not encrypted by this code, and no lawyer is automatically assigned. Do not put real sensitive documents in the demo. Production needs authenticated case access, encrypted object storage, malware scanning, audited consent and retention, secure reviewer permissions, reviewed legal updates and a real advocate network.
+This is still a browser-local prototype. Original documents are not persistently stored, browser-local client records remain unencrypted, and no lawyer is automatically assigned. Encrypted backup downloads now protect the exported record copy only; ordinary drafts and diagnostic copies remain plaintext. Do not put real sensitive documents in the demo. Production needs authenticated case access, encrypted object storage, malware scanning, audited consent and retention, secure reviewer permissions, reviewed legal updates and a real advocate network. [REVIEW.md](REVIEW.md) documents the additional seven-perspective review, implementation and launch gates.
 
 Submission is assisted only. e-Jagriti credentials, OTPs and CAPTCHA are not collected, solved or bypassed; users complete authentication, payment and final submission on the official portal unless an authorised integration is independently available and approved.
-
