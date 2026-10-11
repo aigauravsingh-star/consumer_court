@@ -21,6 +21,15 @@ The local workflow now supports:
 - packet version snapshots;
 - a service layer for self-serve preparation, document review and managed case support;
 - manual submission evidence metadata without collecting portal credentials.
+- a virtual expert team view with strategist, evidence, scrutiny and resolution/execution roles;
+- case-theory mapping from promise or duty to failure, proof and remedy;
+- client-goal and settlement-posture decision logging;
+- issue-specific support and failure signals instead of a fabricated win probability;
+- verified outcome-learning notes that require a source URL before being recorded;
+- an authority ledger linking the workflow to e-Jagriti, India Code, NCDRC, Bar Council and data-protection sources;
+- conflict-check and written-engagement reminders before any real advocate relationship is represented.
+
+The expert-team layer is deliberately a product workflow, not a claim that named law firms or advocates have endorsed the app. It is informed by publicly available consumer-litigation practice descriptions and official materials. It cannot predict or guarantee a win, replace an advocate, or turn unverified judgments into legal authority.
 
 This remains a buildless static local app with localStorage as its development adapter. Do not upload real sensitive documents to this local demo. Before production use, replace localStorage with authenticated access controls, encrypted private object storage, malware scanning, a database, server-side document generation, audit logs, and reviewed legal-rule versions. Automated e-Jagriti submission is intentionally not implemented: users must complete authentication, CAPTCHA, payment and final submission on the official portal unless an authorised integration is separately verified.
 
